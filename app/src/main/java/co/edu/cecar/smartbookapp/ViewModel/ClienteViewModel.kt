@@ -6,11 +6,15 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.cecar.smartbookapp.Data.Data.Repository.ClienteRepository
+import co.edu.cecar.smartbookapp.Models.Clientes.BuscarCliente
 import co.edu.cecar.smartbookapp.Models.Clientes.CrearCliente
 import kotlinx.coroutines.launch
 
 class ClienteViewModel : ViewModel() {
     private val repository = ClienteRepository()
+
+    var listaClientes by mutableStateOf<List<BuscarCliente>>(emptyList())
+        private set
 
     var estaCargando by mutableStateOf(false)
         private set
@@ -21,11 +25,40 @@ class ClienteViewModel : ViewModel() {
     var operacionExitosa by mutableStateOf(false)
         private set
 
+    init {
+        cargarClientes()
+    }
+
+    fun cargarClientes() {
+        viewModelScope.launch {
+            estaCargando = true
+            mensajeError = ""
+            val resultado = repository.buscarPorNombre("") // Buscamos todos por defecto
+            resultado.onSuccess {
+                listaClientes = it
+                estaCargando = false
+            }.onFailure {
+                mensajeError = it.message ?: "Error al cargar clientes"
+                estaCargando = false
+            }
+        }
+    }
+
     fun registrarCliente(cliente: CrearCliente, onExito: () -> Unit) {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
-            val resultado = repository.crear(cliente)
+
+            // Corregimos el formato de fecha de DD/MM/YYYY a YYYY-MM-DD si es necesario
+            val fechaCorregida = if (cliente.fechaNacimiento.contains("/")) {
+                val partes = cliente.fechaNacimiento.split("/")
+                if (partes.size == 3) {
+                    "${partes[2]}-${partes[1]}-${partes[0]}"
+                } else cliente.fechaNacimiento
+            } else cliente.fechaNacimiento
+
+            val clienteParaEnviar = cliente.copy(fechaNacimiento = fechaCorregida)
+            val resultado = repository.crear(clienteParaEnviar)
 
             resultado.onSuccess {
                 estaCargando = false

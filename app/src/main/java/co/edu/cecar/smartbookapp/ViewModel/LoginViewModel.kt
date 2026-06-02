@@ -31,8 +31,14 @@ class LoginViewModel : ViewModel() {
 
             resultado.onSuccess { authResponse ->
                 estaCargando = false
-                // Guardar token
-                SessionManager.guardarSession(authResponse.token)
+                // Guardar token y datos del usuario
+                SessionManager.guardarSession(
+                    token = authResponse.token,
+                    nombre = authResponse.nombres,
+                    correo = credenciales.email,
+                    rol = authResponse.rol,
+                    id = authResponse.usuarioId
+                )
                 // Ejecutar navegación
                 onSuccess()
             }.onFailure { excepcion ->

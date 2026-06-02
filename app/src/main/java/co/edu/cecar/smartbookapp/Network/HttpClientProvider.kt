@@ -1,14 +1,17 @@
 package co.edu.cecar.smartbookapp
 
+import co.edu.cecar.smartbookapp.Token.SessionManager
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.DefaultRequest
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.ANDROID
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -29,13 +32,21 @@ object HttpClientProvider {
             })
         }
         install(HttpTimeout) {
-            requestTimeoutMillis = 15_000
-            connectTimeoutMillis = 10_000
-            socketTimeoutMillis = 15_000
+            requestTimeoutMillis = 20_000
+            connectTimeoutMillis = 15_000
+            socketTimeoutMillis = 20_000
         }
-        install(DefaultRequest) {
+        defaultRequest {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             header(HttpHeaders.Accept, ContentType.Application.Json)
+        }
+    }.apply {
+        // INTERCEPTOR DINÁMICO: Agrega el token actualizado en cada petición
+        plugin(HttpSend).intercept { request ->
+            SessionManager.token?.let {
+                request.header(HttpHeaders.Authorization, "Bearer $it")
+            }
+            execute(request)
         }
     }
 }
