@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.cecar.smartbookapp.Data.Data.Repository.LibroRepository
 import co.edu.cecar.smartbookapp.Models.Libros.Libro
+import co.edu.cecar.smartbookapp.Models.Libros.CrearLibro
 import kotlinx.coroutines.launch
 
 class LibroViewModel : ViewModel() {
@@ -29,7 +30,9 @@ class LibroViewModel : ViewModel() {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
-            val resultado = repository.obtenerlibros()
+
+            val resultado = repository.obtenerLibros()
+
             resultado.onSuccess { libros ->
                 listaLibros = libros
                 estaCargando = false
@@ -43,15 +46,28 @@ class LibroViewModel : ViewModel() {
     fun guardarLibro(libro: Libro, onSuccess: () -> Unit) {
         viewModelScope.launch {
             estaCargando = true
+            mensajeError = ""
+
             val resultado = if (libro.id == null || libro.id == 0) {
-                repository.crearLibro(libro)
+                val libroCrearDto = CrearLibro(
+                    nombre = libro.nombre,
+                    nivel = libro.nivel,
+                    tipo = libro.tipo,
+                    edicion = libro.edicion,
+                    unidades = libro.unidades,
+                    lote = libro.lote,
+                    valorCompra = libro.valorCompra,
+                    valorVentaPublico = libro.valorVentaPublico
+                )
+                // Modificado: Ya recibe el Result<Unit> directo del repositorio limpio
+                repository.crearLibro(libroCrearDto)
             } else {
-                repository.actualizarLibro(libro.id, libro).map { Unit }
+                repository.actualizarLibro(libro.id, libro)
             }
 
             resultado.onSuccess {
                 estaCargando = false
-                cargarLibros()
+                cargarLibros() // Recarga la lista de libros actualizados
                 onSuccess()
             }.onFailure { error ->
                 mensajeError = error.message ?: "Error al guardar libro"
@@ -63,7 +79,10 @@ class LibroViewModel : ViewModel() {
     fun eliminarLibro(id: Int) {
         viewModelScope.launch {
             estaCargando = true
+            mensajeError = ""
+
             val resultado = repository.eliminarLibro(id)
+
             resultado.onSuccess {
                 estaCargando = false
                 cargarLibros()

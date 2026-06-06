@@ -6,16 +6,18 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.cecar.smartbookapp.Data.Data.Repository.VentaRepository
-import co.edu.cecar.smartbookapp.Models.Venta.Venta
+import co.edu.cecar.smartbookapp.Models.Venta.CrearVentaRequest
+import co.edu.cecar.smartbookapp.Models.Venta.VentaResponse
 import kotlinx.coroutines.launch
 
 class VentaViewModel : ViewModel() {
     private val repository = VentaRepository()
 
-    var listaVentas by mutableStateOf<List<Venta>>(emptyList())
+    // Ahora la lista maneja la respuesta real del servidor (VentaResponse)
+    var listaVentas by mutableStateOf<List<VentaResponse>>(emptyList())
         private set
 
-    var ventaSeleccionada by mutableStateOf<Venta?>(null)
+    var ventaSeleccionada by mutableStateOf<VentaResponse?>(null)
         private set
 
     var estaCargando by mutableStateOf(false)
@@ -58,14 +60,14 @@ class VentaViewModel : ViewModel() {
         }
     }
 
-    fun realizarVenta(venta: Venta, onSuccess: () -> Unit) {
+    fun realizarVenta(ventaRequest: CrearVentaRequest, onSuccess: () -> Unit) {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
-            val resultado = repository.realizarVenta(venta)
+            val resultado = repository.registrarNuevaVenta(ventaRequest)
             resultado.onSuccess {
                 estaCargando = false
-                cargarVentas()
+                cargarVentas() // Recarga el historial con la nueva venta incluida
                 onSuccess()
             }.onFailure { error ->
                 mensajeError = error.message ?: "Error al procesar la venta"

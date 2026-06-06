@@ -58,7 +58,7 @@ class ClienteViewModel : ViewModel() {
             } else cliente.fechaNacimiento
 
             val clienteParaEnviar = cliente.copy(fechaNacimiento = fechaCorregida)
-            val resultado = repository.crear(clienteParaEnviar)
+            val resultado = repository.crearCliente(clienteParaEnviar)
 
             resultado.onSuccess {
                 estaCargando = false

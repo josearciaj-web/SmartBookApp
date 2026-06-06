@@ -1,6 +1,5 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,6 +22,7 @@ fun PantallaDetalleVenta(
     volverVentas: () -> Unit,
     viewModel: VentaViewModel = viewModel()
 ) {
+    // Utilizamos el nuevo modelo VentaResponse que tiene configurado el ViewModel
     val venta = viewModel.ventaSeleccionada
     val estaCargando = viewModel.estaCargando
 
@@ -63,44 +63,47 @@ fun PantallaDetalleVenta(
 
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text("Número de Recibo:", fontSize = 14.sp, color = Color.Gray)
-                        Text("FAC-${venta.id}", fontSize = 18.sp, color = Color(0xFF1A3A5C))
+                        Text(venta.numeroRecibo, fontSize = 18.sp, color = Color(0xFF1A3A5C))
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text("Número de Comprobante:", fontSize = 14.sp, color = Color.Gray)
+                        Text(venta.numeroComprobante, fontSize = 18.sp, color = Color(0xFF1A3A5C))
 
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Text("Cliente:", fontSize = 14.sp, color = Color.Gray)
-                        Text(venta.clienteId, fontSize = 18.sp, color = Color(0xFF1A3A5C))
+                        Text(venta.clienteNombre, fontSize = 18.sp, color = Color(0xFF1A3A5C))
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        Text("Total:", fontSize = 14.sp, color = Color.Gray)
+                        Text("Total Procesado:", fontSize = 14.sp, color = Color.Gray)
                         Text("$${venta.total}", fontSize = 24.sp, color = Color(0xFFC0392B))
 
                         Spacer(modifier = Modifier.height(14.dp))
 
-                        Text("Fecha:", fontSize = 14.sp, color = Color.Gray)
+                        Text("Fecha de Registro:", fontSize = 14.sp, color = Color.Gray)
                         Text(venta.fecha, fontSize = 18.sp, color = Color(0xFF1A3A5C))
 
                         Spacer(modifier = Modifier.height(20.dp))
-                        Divider()
+                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(20.dp))
 
                         Text(
-                            text = "Detalles de la compra:",
+                            text = "Información de Facturación:",
                             fontSize = 16.sp,
                             color = Color(0xFF1A3A5C),
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
 
-                        venta.detalles.forEach { detalle ->
-                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                Text("Libro ID: ${detalle.libroId}", modifier = Modifier.weight(1f), fontSize = 14.sp)
-                                Text("Cant: ${detalle.cantidad}", modifier = Modifier.width(60.dp), fontSize = 14.sp)
-                                Text("$${detalle.precioUnitario}", modifier = Modifier.width(80.dp), fontSize = 14.sp)
-                            }
-                        }
+                        Text(
+                            text = "Esta venta fue registrada correctamente bajo el identificador único #${venta.id} en el servidor de SmartBook.",
+                            fontSize = 14.sp,
+                            color = Color.DarkGray
+                        )
 
                         Spacer(modifier = Modifier.height(20.dp))
-                        Divider()
+                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(20.dp))
 
                         Text(

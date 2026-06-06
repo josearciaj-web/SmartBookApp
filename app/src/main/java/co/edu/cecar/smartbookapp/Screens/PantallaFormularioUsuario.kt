@@ -100,7 +100,7 @@ fun PantallaFormularioUsuario(
             Button(
                 onClick = {
                     val usuario = Usuario(
-                        id = idUsuario,
+                        id = if (esRegistro) null else idUsuario,
                         nombreUsuario = nombreUsuario,
                         correo = correo,
                         rol = rol,

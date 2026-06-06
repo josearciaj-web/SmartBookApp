@@ -1,6 +1,5 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -164,11 +163,13 @@ fun PantallaVentas(
                         } else {
                             listaVentas.forEach { venta ->
                                 FilaVenta(
-                                    recibo = "FAC-${venta.id ?: "000"}",
-                                    cliente = venta.clienteId,
+                                    // Usamos el número de recibo real que responde tu API
+                                    recibo = venta.numeroRecibo,
+                                    // Cambiamos clienteId por clienteNombre que viene en el DTO
+                                    cliente = venta.clienteNombre,
                                     total = "$ ${venta.total}",
                                     fecha = venta.fecha,
-                                    irDetalleVenta = { venta.id?.let { irDetalleVenta(it) } }
+                                    irDetalleVenta = { irDetalleVenta(venta.id) }
                                 )
                                 HorizontalDivider()
                             }

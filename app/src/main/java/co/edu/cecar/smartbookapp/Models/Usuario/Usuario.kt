@@ -1,13 +1,13 @@
 package co.edu.cecar.smartbookapp.Models.Usuario
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-
 data class Usuario(
-    val id: Int? = null, // Nulo al hacer POST
-    val nombreUsuario: String,
-    val correo: String,
-    val rol: String,      // Ej: "Admin", "Vendedor"
-    val activo: Boolean
+    @SerialName("id") val id: Int? = null,
+    @SerialName("nombres") val nombreUsuario: String = "",
+    @SerialName("email") val correo: String = "",
+    @SerialName("rol") val rol: String = "Vendedor",
+    @SerialName("activo") val activo: Boolean = true
 )

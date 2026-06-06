@@ -1,13 +1,12 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -15,8 +14,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.cecar.smartbookapp.Models.Inventario.Inventario
 import co.edu.cecar.smartbookapp.Models.Libros.Libro
 import co.edu.cecar.smartbookapp.ViewModel.LibroViewModel
 
@@ -40,9 +39,8 @@ fun PantallaFormularioLibro(
     val mensajeError = viewModel.mensajeError
     val esRegistro = idLibro == null || idLibro == 0
 
-    // Cargar datos si es edición
     LaunchedEffect(idLibro) {
-        if (!esRegistro && idLibro != null) {
+        if (!esRegistro) {
             val libro = viewModel.listaLibros.find { it.id == idLibro }
             if (libro != null) {
                 nombre = libro.nombre
@@ -50,13 +48,11 @@ fun PantallaFormularioLibro(
                 tipo = when (libro.tipo) {
                     1 -> "Student's Book"
                     2 -> "Workbook"
-                    3 -> "Texto guía"
-                    4 -> "Cuaderno"
-                    else -> "Lectura"
+                    else -> "Student's Book"
                 }
                 edicion = libro.edicion
                 lote = libro.lote.toString()
-                stock = libro.unidades.toString()
+                stock = libro.stock.toString()
                 valorCompra = libro.valorCompra.toString()
                 valorVenta = libro.valorVentaPublico.toString()
             }
@@ -71,7 +67,7 @@ fun PantallaFormularioLibro(
     ) {
 
         IconButton(onClick = { volverLibros() }) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
         }
 
         Card(
@@ -81,7 +77,7 @@ fun PantallaFormularioLibro(
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
                 Row {
-                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color.White)
+                    Icon(Icons.AutoMirrored.Filled.MenuBook, contentDescription = null, tint = Color.White)
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(titulo, color = Color.White, fontSize = 24.sp)
                 }
@@ -111,7 +107,7 @@ fun PantallaFormularioLibro(
 
         if (esRegistro) {
             Spacer(modifier = Modifier.height(12.dp))
-            Divider()
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
@@ -119,12 +115,14 @@ fun PantallaFormularioLibro(
                 fontSize = 20.sp,
                 color = Color(0xFF1A3A5C)
             )
-
-            CampoLibro("Lote *", "Ej: 20261", lote, { lote = it }, KeyboardType.Number)
-            CampoLibro("Unidades a ingresar", "Ej: 10", stock, { stock = it }, KeyboardType.Number)
-            CampoLibro("Valor de compra", "$ 0.00", valorCompra, { valorCompra = it }, KeyboardType.Number)
-            CampoLibro("Valor venta público", "$ 0.00", valorVenta, { valorVenta = it }, KeyboardType.Number)
         }
+
+        CampoLibro("Lote *", "Ej: 20261", lote, { lote = it }, KeyboardType.Number)
+        CampoLibro("Unidades a ingresar", "Ej: 10", stock, { stock = it }, KeyboardType.Number)
+
+        // Cambiados a KeyboardType.Decimal para permitir ingresar correctamente centavos o decimales si se requiere
+        CampoLibro("Valor de compra", "$ 0.00", valorCompra, { valorCompra = it }, KeyboardType.Decimal)
+        CampoLibro("Valor venta público", "$ 0.00", valorVenta, { valorVenta = it }, KeyboardType.Decimal)
 
         if (mensajeError.isNotEmpty()) {
             Text(mensajeError, color = Color.Red, modifier = Modifier.padding(vertical = 8.dp))
@@ -148,33 +146,58 @@ fun PantallaFormularioLibro(
 
             Button(
                 onClick = {
-                    val tipoInt = when(tipo) {
+                    val tipoCod = when (tipo) {
                         "Student's Book" -> 1
                         "Workbook" -> 2
-                        "Texto guía" -> 3
-                        "Cuaderno" -> 4
-                        else -> 5
+                        else -> 3
                     }
+
+                    val unidades = stock.toIntOrNull() ?: 0
+                    val loteNumero = lote.toIntOrNull() ?: 0
+                    val compra = valorCompra.toDoubleOrNull() ?: 0.0
+                    val venta = valorVenta.toDoubleOrNull() ?: 0.0
+
+                    // Se construye el objeto original. Si es una creación, el ViewModel lo traducirá al DTO limpio de forma automática.
                     val nuevoLibro = Libro(
-                        id = idLibro ?: 0,
+                        id = if (esRegistro) null else idLibro,
                         nombre = nombre,
                         nivel = nivel,
-                        tipo = tipoInt,
+                        tipo = tipoCod,
                         edicion = edicion,
-                        unidades = stock.toIntOrNull() ?: 0,
-                        lote = lote.toIntOrNull() ?: 0,
-                        valorCompra = valorCompra.toDoubleOrNull() ?: 0.0,
-                        valorVentaPublico = valorVenta.toDoubleOrNull() ?: 0.0
+                        unidades = unidades,
+                        lote = loteNumero,
+                        stock = unidades,
+                        valorCompra = compra,
+                        valorVentaPublico = venta,
+                        inventario = if (esRegistro) {
+                            listOf(
+                                Inventario(
+                                    unidades = unidades,
+                                    lote = loteNumero,
+                                    valorCompra = compra,
+                                    valorVentaPublico = venta,
+                                    nombreLibro = nombre
+                                )
+                            )
+                        } else {
+                            null
+                        }
                     )
+
                     viewModel.guardarLibro(nuevoLibro) {
                         volverLibros()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC0392B)),
-                enabled = !estaCargando
+                enabled = !estaCargando &&
+                        nombre.isNotBlank() &&
+                        nivel.isNotBlank() &&
+                        tipo.isNotBlank() &&
+                        lote.isNotBlank() &&
+                        stock.isNotBlank()
             ) {
                 if (estaCargando) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text("Guardar Libro")
                 }
@@ -218,10 +241,7 @@ fun CampoTipoLibro(
 
     val opciones = listOf(
         "Student's Book",
-        "Workbook",
-        "Texto guía",
-        "Cuaderno",
-        "Lectura"
+        "Workbook"
     )
 
     Text(
@@ -245,7 +265,7 @@ fun CampoTipoLibro(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
         )
 
         ExposedDropdownMenu(

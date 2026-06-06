@@ -1,6 +1,5 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -8,12 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,43 +17,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.cecar.smartbookapp.R
+import co.edu.cecar.smartbookapp.ViewModel.InventarioViewModel
 
 @Composable
 fun PantallaInventario(
-    volverDashboard: () -> Unit
+    volverDashboard: () -> Unit,
+    viewModel: InventarioViewModel = viewModel()
 ) {
-    var loteSeleccionado by remember { mutableStateOf("Ver Todo") }
-    var loteBuscar by remember { mutableStateOf("20261") }
+    var loteBuscar by remember { mutableStateOf("") }
+    val inventario = viewModel.listaInventario
+    val estaCargando = viewModel.estaCargando
+    val mensajeError = viewModel.mensajeError
 
-    val libros = when (loteSeleccionado) {
-        "Sem 2 · 2025" -> listOf(
-            InventarioLibro("Passages 1", "Teens C1.1", "1ra", "StudentsBook", "20252", "500", "16", "484"),
-            InventarioLibro("Superminds 6", "Kids A2.3", "1ra", "StudentsBook", "20252", "100", "1", "99")
-        )
-
-        "Sem 1 · 2026" -> listOf(
-            InventarioLibro("Passages 1", "Teens C1.1", "1ra", "StudentsBook", "20261", "500", "16", "484"),
-            InventarioLibro("Superminds 6", "Kids A2.3", "1ra", "StudentsBook", "20261", "100", "1", "99"),
-            InventarioLibro("Superminds 2", "Kids A1.2", "1", "StudentsBook", "20261", "100", "1", "99"),
-            InventarioLibro("Uncover 3A", "Teens B1.1", "1ra", "StudentsBook", "20261", "80", "12", "68")
-        )
-
-        "Sem 2 · 2026" -> listOf(
-            InventarioLibro("Uncover 5C", "Teens", "2", "StudentsBook", "20262", "50", "0", "50"),
-            InventarioLibro("Uncover 6A", "1", "3ra", "StudentsBook", "20262", "60", "0", "60")
-        )
-
-        else -> listOf(
-            InventarioLibro("Passages 1", "Teens C1.1", "1ra", "StudentsBook", "20261", "500", "16", "484"),
-            InventarioLibro("Superminds 6", "Kids A2.3", "1ra", "StudentsBook", "20261", "100", "1", "99"),
-            InventarioLibro("Superminds 2", "Kids A1.2", "1", "StudentsBook", "20261", "100", "1", "99"),
-            InventarioLibro("Uncover 3A", "Teens B1.1", "1ra", "StudentsBook", "20261", "80", "12", "68")
-        )
+    LaunchedEffect(Unit) {
+        viewModel.cargarInventario()
     }
 
-    val stockTotal = libros.sumOf { it.stockDisponible.toInt() }
-    val bajoStock = libros.count { it.stockDisponible.toInt() <= 10 }
+    val stockTotal = inventario.sumOf { it.unidades }
+    val bajoStock = inventario.count { it.unidades <= 10 }
 
     Column(
         modifier = Modifier
@@ -91,8 +68,8 @@ fun PantallaInventario(
 
         Button(
             onClick = {
-                loteSeleccionado = "Ver Todo"
                 loteBuscar = ""
+                viewModel.cargarInventario()
             },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3F98))
@@ -105,7 +82,7 @@ fun PantallaInventario(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            TarjetaInventario("Total Libros", "24", Icons.Default.MenuBook, Color(0xFFC0392B), Modifier.weight(1f))
+            TarjetaInventario("Items", "${inventario.size}", Icons.Default.MenuBook, Color(0xFFC0392B), Modifier.weight(1f))
             Spacer(modifier = Modifier.width(10.dp))
             TarjetaInventario("Bajo Stock", bajoStock.toString(), Icons.Default.Warning, Color(0xFF3F3F98), Modifier.weight(1f))
         }
@@ -140,12 +117,8 @@ fun PantallaInventario(
 
                     Button(
                         onClick = {
-                            loteSeleccionado = when (loteBuscar) {
-                                "20252" -> "Sem 2 · 2025"
-                                "20261" -> "Sem 1 · 2026"
-                                "20262" -> "Sem 2 · 2026"
-                                else -> "Ver Todo"
-                            }
+                            val loteInt = loteBuscar.toIntOrNull()
+                            viewModel.cargarInventario(loteInt)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3F98))
                     ) {
@@ -154,39 +127,6 @@ fun PantallaInventario(
                         Text("Buscar")
                     }
                 }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState())
-                ) {
-                    BotonLote("Sem 2 · 2025", loteSeleccionado) {
-                        loteSeleccionado = "Sem 2 · 2025"
-                        loteBuscar = "20252"
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    BotonLote("Sem 1 · 2026", loteSeleccionado) {
-                        loteSeleccionado = "Sem 1 · 2026"
-                        loteBuscar = "20261"
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    BotonLote("Sem 2 · 2026", loteSeleccionado) {
-                        loteSeleccionado = "Sem 2 · 2026"
-                        loteBuscar = "20262"
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Formato: año + semestre — ej: 20261",
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
             }
         }
 
@@ -209,6 +149,14 @@ fun PantallaInventario(
                     Text("Inventario de Libros", color = Color(0xFF1A3A5C), fontSize = 20.sp)
                 }
 
+                if (estaCargando) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (mensajeError.isNotEmpty()) {
+                    Text(mensajeError, color = Color.Red, modifier = Modifier.padding(16.dp))
+                }
+
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
@@ -216,11 +164,11 @@ fun PantallaInventario(
                 ) {
                     Column {
                         FilaEncabezadoInventario()
-                        Divider()
+                        HorizontalDivider()
 
-                        libros.forEach { libro ->
-                            FilaInventario(libro)
-                            Divider()
+                        inventario.forEach { item ->
+                            FilaInventario(item)
+                            HorizontalDivider()
                         }
                     }
                 }
@@ -247,7 +195,7 @@ fun TarjetaInventario(
                 .fillMaxSize()
                 .padding(14.dp)
         ) {
-            Divider(color = colorSuperior, thickness = 4.dp)
+            HorizontalDivider(color = colorSuperior, thickness = 4.dp)
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -264,74 +212,29 @@ fun TarjetaInventario(
 }
 
 @Composable
-fun BotonLote(
-    texto: String,
-    loteSeleccionado: String,
-    onClick: () -> Unit
-) {
-    val seleccionado = texto == loteSeleccionado
-
-    Button(
-        onClick = onClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (seleccionado) Color(0xFF3F3F98) else Color(0xFFEFEFEF)
-        )
-    ) {
-        Text(
-            text = texto,
-            color = if (seleccionado) Color.White else Color(0xFF1A3A5C),
-            fontSize = 13.sp
-        )
-    }
-}
-
-@Composable
 fun FilaEncabezadoInventario() {
-    Row(modifier = Modifier.width(1150.dp)) {
-        Text("Libro", modifier = Modifier.width(230.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Nivel", modifier = Modifier.width(180.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Edición", modifier = Modifier.width(90.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Tipo", modifier = Modifier.width(160.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Lote", modifier = Modifier.width(100.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Ingresada", modifier = Modifier.width(120.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Vendida", modifier = Modifier.width(110.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Stock", modifier = Modifier.width(110.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
+    Row(modifier = Modifier.width(900.dp)) {
+        Text("Libro", modifier = Modifier.width(260.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
+        Text("Lote", modifier = Modifier.width(130.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
+        Text("Disponibles", modifier = Modifier.width(170.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
+        Text("Ingresados", modifier = Modifier.width(170.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
+        Text("Vendidos", modifier = Modifier.width(170.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
     }
 }
 
 @Composable
-fun FilaInventario(libro: InventarioLibro) {
+fun FilaInventario(item: co.edu.cecar.smartbookapp.Models.Inventario.Inventario) {
     Row(
         modifier = Modifier
-            .width(1150.dp)
+            .width(900.dp)
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(libro.nombre, modifier = Modifier.width(230.dp), fontSize = 14.sp)
-        Text(libro.nivel, modifier = Modifier.width(180.dp), fontSize = 14.sp)
-        Text(libro.edicion, modifier = Modifier.width(90.dp), fontSize = 14.sp)
-        Text(libro.tipo, modifier = Modifier.width(160.dp), fontSize = 14.sp)
-        Text(libro.lote, modifier = Modifier.width(100.dp), fontSize = 14.sp)
-        Text(libro.cantidadIngresada, modifier = Modifier.width(120.dp), fontSize = 14.sp)
-        Text(libro.cantidadVendida, modifier = Modifier.width(110.dp), fontSize = 14.sp)
-
-        val stock = libro.stockDisponible.toInt()
-        Text(
-            text = libro.stockDisponible,
-            modifier = Modifier.width(110.dp),
-            color = if (stock <= 10) Color(0xFFC0392B) else Color(0xFF1A3A5C),
-            fontSize = 14.sp
-        )
+        val displayNombre = if (item.nombreLibro != "Desconocido") item.nombreLibro else "ID: ${item.libroId}"
+        Text(displayNombre, modifier = Modifier.width(260.dp), fontSize = 14.sp)
+        Text("${item.lote}", modifier = Modifier.width(130.dp), fontSize = 14.sp)
+        Text("${item.unidades}", modifier = Modifier.width(170.dp), fontSize = 14.sp, color = if (item.unidades <= 10) Color.Red else Color.Black)
+        Text("${item.cantidadIngresada}", modifier = Modifier.width(170.dp), fontSize = 14.sp)
+        Text("${item.cantidadVendida}", modifier = Modifier.width(170.dp), fontSize = 14.sp)
     }
 }
-
-data class InventarioLibro(
-    val nombre: String,
-    val nivel: String,
-    val edicion: String,
-    val tipo: String,
-    val lote: String,
-    val cantidadIngresada: String,
-    val cantidadVendida: String,
-    val stockDisponible: String
-)

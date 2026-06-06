@@ -46,136 +46,97 @@ fun PantallaDashboard(
     val nombreUsuario = SessionManager.nombreUsuario ?: "Administrador CDI"
     val correoUsuario = SessionManager.correoUsuario ?: "admin@cecar.edu.co"
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = true, 
-                    onClick = { /* Ya estamos aquí */ }, 
-                    icon = { Icon(Icons.Default.Dashboard, null) }, 
-                    label = { Text("Dashboard") }
-                )
-                NavigationBarItem(
-                    selected = false, 
-                    onClick = irAClientes, 
-                    icon = { Icon(Icons.Default.People, null) }, 
-                    label = { Text("Clientes") }
-                )
-                NavigationBarItem(
-                    selected = false, 
-                    onClick = irALibros, 
-                    icon = { Icon(Icons.Default.MenuBook, null) }, 
-                    label = { Text("Libros") }
-                )
-                NavigationBarItem(
-                    selected = false, 
-                    onClick = irALotes, 
-                    icon = { Icon(Icons.Default.Inventory, null) }, 
-                    label = { Text("Lotes") }
-                )
-                NavigationBarItem(
-                    selected = false, 
-                    onClick = irAVentas, 
-                    icon = { Icon(Icons.Default.ShoppingBag, null) }, 
-                    label = { Text("Ventas") }
-                )
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F5))
+            .verticalScroll(rememberScrollState())
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "CDI CECAR",
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = Color(0xFFD32F2F)
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(nombreUsuario, fontSize = 14.sp, color = Color(0xFF1E2229))
+                Text(correoUsuario, fontSize = 11.sp, color = Color.Gray)
             }
         }
-    ) { paddingValores ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValores)
-                .background(Color(0xFFF5F5F5))
-                .verticalScroll(rememberScrollState())
-        ) {
-            // Header: Reemplacé la imagen por texto para evitar el error del logo inexistente
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "CDI CECAR",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color(0xFFD32F2F)
-                )
+        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
 
-                Spacer(modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.padding(16.dp)) {
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(nombreUsuario, fontSize = 14.sp, color = Color(0xFF1E2229))
-                    Text(correoUsuario, fontSize = 11.sp, color = Color.Gray)
+            Text(
+                text = "Dashboard",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1E2229)
+            )
+
+            Text(
+                text = "Bienvenido al sistema SmartBook",
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (estaCargando) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFD32F2F))
                 }
+            } else if (viewModel.mensajeError.isNotEmpty()) {
+                Text(text = viewModel.mensajeError, color = Color.Red, modifier = Modifier.padding(16.dp))
+                Button(onClick = { viewModel.cargarDashboard() }) {
+                    Text("Reintentar")
+                }
+            } else {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    TarjetaIndicador("Total Clientes", "${dashboardData?.totalClientes ?: 0}", Icons.Default.Person, Color(0xFFD32F2F), Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    TarjetaIndicador("Libros Stock", "${dashboardData?.totalLibros ?: 0}", Icons.Default.MenuBook, Color(0xFF1E2229), Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    TarjetaIndicador("Ventas Mes", "0", Icons.Default.ShoppingBag, Color(0xFFD32F2F), Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(10.dp))
+                    TarjetaIndicador("Ver Lotes", "Activos", Icons.Default.Inventory, Color(0xFF1E2229), Modifier.weight(1f).clickable { irALotes() })
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TarjetaIndicador("Ver Inventario General", "Stock", Icons.Default.MenuBook, Color(0xFF3F3F98), Modifier.fillMaxWidth().clickable { irAInventario() })
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TarjetaIndicador("Gestionar Usuarios", "Accesos", Icons.Default.Person, Color(0xFF27AE60), Modifier.fillMaxWidth().clickable { irAUsuarios() })
             }
 
-            HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Column(modifier = Modifier.padding(16.dp)) {
-
-                Text(
-                    text = "Dashboard",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF1E2229)
-                )
-
-                Text(
-                    text = "Bienvenido al sistema SmartBook",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (estaCargando) {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFFD32F2F))
-                    }
-                } else if (viewModel.mensajeError.isNotEmpty()) {
-                    Text(text = viewModel.mensajeError, color = Color.Red, modifier = Modifier.padding(16.dp))
-                    Button(onClick = { viewModel.cargarDashboard() }) {
-                        Text("Reintentar")
-                    }
-                } else {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        TarjetaIndicador("Total Clientes", "${dashboardData?.totalClientes ?: 0}", Icons.Default.Person, Color(0xFFD32F2F), Modifier.weight(1f))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        TarjetaIndicador("Libros Stock", "${dashboardData?.totalLibros ?: 0}", Icons.Default.MenuBook, Color(0xFF1E2229), Modifier.weight(1f))
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        TarjetaIndicador("Ventas Mes", "0", Icons.Default.ShoppingBag, Color(0xFFD32F2F), Modifier.weight(1f))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        TarjetaIndicador("Ver Lotes", "Activos", Icons.Default.Inventory, Color(0xFF1E2229), Modifier.weight(1f).clickable { irALotes() })
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    TarjetaIndicador("Ver Inventario General", "Stock", Icons.Default.MenuBook, Color(0xFF3F3F98), Modifier.fillMaxWidth().clickable { irAInventario() })
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    TarjetaIndicador("Gestionar Usuarios", "Accesos", Icons.Default.Person, Color(0xFF27AE60), Modifier.fillMaxWidth().clickable { irAUsuarios() })
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { cerrarSesion() },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cerrar sesión")
-                }
+            Button(
+                onClick = { cerrarSesion() },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Cerrar sesión")
             }
         }
     }

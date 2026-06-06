@@ -29,6 +29,8 @@ object HttpClientProvider {
                 ignoreUnknownKeys = true
                 prettyPrint = true
                 isLenient = true
+                encodeDefaults = false // No enviar campos con valores por defecto (como id=null)
+                coerceInputValues = true // Tratar de convertir tipos si es posible
             })
         }
         install(HttpTimeout) {

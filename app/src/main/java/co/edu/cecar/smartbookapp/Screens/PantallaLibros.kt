@@ -1,6 +1,5 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -11,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.cecar.smartbookapp.Models.Libros.Libro
 import co.edu.cecar.smartbookapp.R
 import co.edu.cecar.smartbookapp.ViewModel.LibroViewModel
 
@@ -32,13 +33,16 @@ fun PantallaLibros(
     viewModel: LibroViewModel = viewModel()
 ) {
     var buscarState by remember { mutableStateOf("") }
+
     val libros = viewModel.listaLibros.filter {
         it.nombre.contains(buscarState, ignoreCase = true) ||
-        it.nivel.contains(buscarState, ignoreCase = true)
+                it.nivel.contains(buscarState, ignoreCase = true) ||
+                it.tipo.toString().contains(buscarState, ignoreCase = true)
     }
-    val estaCargando = viewModel.estaCargando
 
-    // REFRESCO AUTOMÁTICO AL ENTRAR
+    val estaCargando = viewModel.estaCargando
+    val mensajeError = viewModel.mensajeError
+
     LaunchedEffect(Unit) {
         viewModel.cargarLibros()
     }
@@ -81,6 +85,17 @@ fun PantallaLibros(
             Text("Nuevo Libro")
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = { viewModel.cargarLibros() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Refresh, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Actualizar lista")
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -112,6 +127,15 @@ fun PantallaLibros(
                     Text("Listado de Libros", color = Color(0xFF1A3A5C), fontSize = 20.sp)
                 }
 
+                if (mensajeError.isNotBlank()) {
+                    Text(
+                        text = mensajeError,
+                        color = Color(0xFFC0392B),
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
+
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
@@ -120,33 +144,70 @@ fun PantallaLibros(
                     Column {
                         FilaEncabezadoLibros()
                         HorizontalDivider()
-                        
-                        if (estaCargando) {
-                            Box(modifier = Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
+
+                        when {
+                            estaCargando -> {
+                                Box(
+                                    modifier = Modifier
+                                        .width(930.dp)
+                                        .padding(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator()
+                                }
                             }
-                        } else if (libros.isEmpty()) {
-                            Text("No se encontraron libros", modifier = Modifier.padding(20.dp))
-                        } else {
-                            libros.forEach { libro ->
-                                FilaLibro(
-                                    libro.id ?: 0,
-                                    libro.nombre,
-                                    libro.nivel,
-                                    if (libro.tipo == 1) "Workbook" else "StudentBook",
-                                    libro.edicion,
-                                    libro.lote.toString(),
-                                    libro.unidades.toString(),
-                                    irEditarLibro,
-                                    onEliminar = { viewModel.eliminarLibro(libro.id ?: 0) }
+
+                            libros.isEmpty() -> {
+                                Text(
+                                    text = "No se encontraron libros",
+                                    modifier = Modifier.padding(20.dp),
+                                    color = Color.Gray
                                 )
-                                HorizontalDivider()
+                            }
+
+                            else -> {
+                                libros.forEach { libro ->
+                                    FilaLibro(
+                                        id = libro.id ?: 0,
+                                        nombre = libro.nombre,
+                                        nivel = libro.nivel,
+                                        tipo = obtenerTipoLibro(libro.tipo.toString()),
+                                        edicion = libro.edicion,
+                                        lote = libro.lote,
+                                        stock = obtenerStockLibro(libro),
+                                        irEditarLibro = irEditarLibro,
+                                        onEliminar = {
+                                            if ((libro.id ?: 0) != 0) {
+                                                viewModel.eliminarLibro(libro.id ?: 0)
+                                            }
+                                        }
+                                    )
+                                    HorizontalDivider()
+                                }
                             }
                         }
                     }
                 }
             }
         }
+    }
+}
+
+fun obtenerTipoLibro(tipo: String): String {
+    return when (tipo) {
+        "1" -> "Student's Book"
+        "2" -> "Workbook"
+        else -> tipo
+    }
+}
+
+fun obtenerStockLibro(libro: Libro): Int {
+    val stockInventario = libro.inventario?.sumOf { item -> item.unidades } ?: 0
+    return when {
+        libro.stock > 0 -> libro.stock
+        libro.unidades > 0 -> libro.unidades
+        stockInventario > 0 -> stockInventario
+        else -> 0
     }
 }
 
@@ -170,8 +231,8 @@ fun FilaLibro(
     nivel: String,
     tipo: String,
     edicion: String,
-    lote: String,
-    stock: String,
+    lote: Int,
+    stock: Int,
     irEditarLibro: (Int) -> Unit,
     onEliminar: () -> Unit
 ) {
@@ -185,21 +246,22 @@ fun FilaLibro(
         Text(nivel, modifier = Modifier.width(140.dp), fontSize = 14.sp)
         Text(tipo, modifier = Modifier.width(150.dp), fontSize = 14.sp)
         Text(edicion, modifier = Modifier.width(100.dp), fontSize = 14.sp)
-        Text(lote, modifier = Modifier.width(100.dp), fontSize = 14.sp)
-        Text(stock, modifier = Modifier.width(90.dp), fontSize = 14.sp)
+        Text(text = lote.toString(), modifier = Modifier.width(100.dp), fontSize = 14.sp)
+        Text(text = stock.toString(), modifier = Modifier.width(90.dp), fontSize = 14.sp)
+
         Row(modifier = Modifier.width(140.dp)) {
             Text(
                 "Editar",
-                modifier = Modifier
-                    .clickable { irEditarLibro(id) },
+                modifier = Modifier.clickable { irEditarLibro(id) },
                 color = Color(0xFFC0392B),
                 fontSize = 14.sp
             )
+
             Spacer(modifier = Modifier.width(10.dp))
+
             Text(
                 "Borrar",
-                modifier = Modifier
-                    .clickable { onEliminar() },
+                modifier = Modifier.clickable { onEliminar() },
                 color = Color.Gray,
                 fontSize = 14.sp
             )

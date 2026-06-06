@@ -1,6 +1,6 @@
 package co.edu.cecar.smartbookapp.Screens
 
-
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -8,26 +8,32 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.lifecycle.viewmodel.compose.viewModel
-import co.edu.cecar.smartbookapp.Models.Venta.DetalleVenta
-import co.edu.cecar.smartbookapp.Models.Venta.Venta
-import co.edu.cecar.smartbookapp.Token.SessionManager
+import co.edu.cecar.smartbookapp.Models.Venta.CrearVentaRequest
+import co.edu.cecar.smartbookapp.Models.Venta.ItemVentaRequest
 import co.edu.cecar.smartbookapp.ViewModel.LibroViewModel
 import co.edu.cecar.smartbookapp.ViewModel.VentaViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+
+// Estructura auxiliar local para controlar el carrito con su lote correspondiente en la UI
+data class ItemCarrito(
+    val libroId: Int,
+    val nombre: String,
+    val lote: Int,
+    val cantidad: Int,
+    val precioUnitario: Double
+)
 
 @Composable
 fun PantallaFormularioVenta(
@@ -36,15 +42,14 @@ fun PantallaFormularioVenta(
     libroViewModel: LibroViewModel = viewModel()
 ) {
     var identificacion by remember { mutableStateOf("") }
-    
-    // Estado para la selección de libros
+
+    // Estado para la selección de libros y manejo de precios/cantidades
     var libroSeleccionado by remember { mutableStateOf<co.edu.cecar.smartbookapp.Models.Libros.Libro?>(null) }
     var cantidad by remember { mutableStateOf("1") }
-    
-    // Lista de items agregados a la venta actual
-    val itemsAgregados = remember { mutableStateListOf<DetalleVenta>() }
-    // Nombres para mostrar en la UI
-    val nombresLibros = remember { mutableStateMapOf<Int, String>() }
+    var precioManual by remember { mutableStateOf("0.0") }
+
+    // Lista de items agregados a la venta actual usando el modelo auxiliar
+    val itemsAgregados = remember { mutableStateListOf<ItemCarrito>() }
 
     val estaCargando = ventaViewModel.estaCargando
     val mensajeError = ventaViewModel.mensajeError
@@ -115,7 +120,7 @@ fun PantallaFormularioVenta(
                 }
 
                 Text("Agregar Libro", fontSize = 14.sp, color = Color(0xFF1A3A5C), modifier = Modifier.padding(top = 10.dp))
-                
+
                 var expanded by remember { mutableStateOf(false) }
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -124,21 +129,29 @@ fun PantallaFormularioVenta(
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
                         trailingIcon = {
-                            IconButton(onClick = { expanded = true }) {
-                                Icon(Icons.Default.Add, contentDescription = null)
-                            }
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color(0xFF1A3A5C))
                         }
                     )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { expanded = true }
+                    )
+
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                         modifier = Modifier.fillMaxWidth(0.9f)
                     ) {
                         libroViewModel.listaLibros.forEach { l ->
+                            val stockDisponible = calcularStockFormulario(l)
                             DropdownMenuItem(
-                                text = { Text("${l.nombre} - Lote: ${l.lote} (Stock: ${l.unidades})") },
+                                text = { Text("${l.nombre} - Lote: ${l.lote} (Stock: $stockDisponible)") },
                                 onClick = {
                                     libroSeleccionado = l
+                                    // Precargamos el precio que viene del servidor convertido a texto
+                                    precioManual = l.valorVentaPublico.toString()
                                     expanded = false
                                 }
                             )
@@ -147,8 +160,13 @@ fun PantallaFormularioVenta(
                 }
 
                 if (libroSeleccionado != null) {
-                    Text("Precio: $${libroSeleccionado?.valorVentaPublico}", fontSize = 14.sp, color = Color.Gray)
-                    CampoVenta("Cantidad", "1", cantidad, { cantidad = it }, KeyboardType.Number)
+                    val stockMaximo = calcularStockFormulario(libroSeleccionado!!)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("Stock en sistema: $stockMaximo", fontSize = 14.sp, color = Color(0xFF3F3F98))
+
+                    // Ahora el precio es un campo editable por si el servidor manda 0.0
+                    CampoVenta("Precio Unitario ($)", "0.0", precioManual, { precioManual = it }, KeyboardType.Decimal)
+                    CampoVenta("Cantidad a comprar", "1", cantidad, { cantidad = it }, KeyboardType.Number)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -157,17 +175,21 @@ fun PantallaFormularioVenta(
                     onClick = {
                         libroSeleccionado?.let { l ->
                             val cant = cantidad.toIntOrNull() ?: 0
-                            if (cant > 0 && cant <= l.unidades) {
-                                val item = DetalleVenta(
+                            val precioDouble = precioManual.toDoubleOrNull() ?: 0.0
+
+                            if (cant > 0) {
+                                val item = ItemCarrito(
                                     libroId = l.id ?: 0,
+                                    nombre = l.nombre,
+                                    lote = l.lote,
                                     cantidad = cant,
-                                    precioUnitario = l.valorVentaPublico
+                                    precioUnitario = precioDouble // Guarda el precio digitado
                                 )
                                 itemsAgregados.add(item)
-                                nombresLibros[l.id ?: 0] = l.nombre
                                 // Reset selección
                                 libroSeleccionado = null
                                 cantidad = "1"
+                                precioManual = "0.0"
                             }
                         }
                     },
@@ -193,7 +215,7 @@ fun PantallaFormularioVenta(
                     Text("Resumen de Items", fontSize = 18.sp, color = Color(0xFF1A3A5C))
                     itemsAgregados.forEachIndexed { index, item ->
                         Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("${nombresLibros[item.libroId]} x${item.cantidad}", modifier = Modifier.weight(1f))
+                            Text("${item.nombre} x${item.cantidad}", modifier = Modifier.weight(1f))
                             Text("$${item.cantidad * item.precioUnitario}")
                             IconButton(onClick = { itemsAgregados.removeAt(index) }, modifier = Modifier.size(24.dp)) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = Color.Red, modifier = Modifier.size(16.dp))
@@ -234,17 +256,20 @@ fun PantallaFormularioVenta(
             Button(
                 onClick = {
                     if (identificacion.isNotBlank() && itemsAgregados.isNotEmpty()) {
-                        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                        val fechaActual = sdf.format(Date())
-                        
-                        val nuevaVenta = Venta(
-                            clienteId = identificacion,
-                            usuarioId = SessionManager.usuarioId ?: 1,
-                            fecha = fechaActual,
-                            total = totalVenta,
-                            detalles = itemsAgregados.toList()
+                        val ventaRequest = CrearVentaRequest(
+                            identificacionCliente = identificacion,
+                            numeroComprobante = "POS-${System.currentTimeMillis() / 1000}",
+                            observaciones = "Venta POS registrada desde la App Móvil",
+                            items = itemsAgregados.map { item ->
+                                ItemVentaRequest(
+                                    libroId = item.libroId,
+                                    lote = item.lote,
+                                    cantidad = item.cantidad
+                                )
+                            }
                         )
-                        ventaViewModel.realizarVenta(nuevaVenta) {
+
+                        ventaViewModel.realizarVenta(ventaRequest) {
                             volverVentas()
                         }
                     }
@@ -260,6 +285,16 @@ fun PantallaFormularioVenta(
                 }
             }
         }
+    }
+}
+
+fun calcularStockFormulario(libro: co.edu.cecar.smartbookapp.Models.Libros.Libro): Int {
+    val stockInventario = libro.inventario?.sumOf { item -> item.unidades } ?: 0
+    return when {
+        libro.stock > 0 -> libro.stock
+        libro.unidades > 0 -> libro.unidades
+        stockInventario > 0 -> stockInventario
+        else -> 0
     }
 }
 
