@@ -35,7 +35,6 @@ class ClienteRepository {
                 "Error de conexión con el servidor."
             }
 
-            // Camuflaje para clientes
             val mensajeCamuflado = when {
                 mensajeServidor.contains("ya existe", ignoreCase = true) || jsonCrudo.contains("duplicate", ignoreCase = true) -> {
                     "No se puede guardar: Ya existe un cliente registrado con este número de identificación."

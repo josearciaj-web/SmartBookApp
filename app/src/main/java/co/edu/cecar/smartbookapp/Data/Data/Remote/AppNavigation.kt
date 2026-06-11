@@ -3,6 +3,7 @@ package co.edu.cecar.smartbookapp.Data.Data.Remote
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
@@ -16,7 +17,9 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation3.runtime.entryProvider
@@ -37,6 +40,9 @@ import co.edu.cecar.smartbookapp.Screens.PantallaRestablecerContrasena
 import co.edu.cecar.smartbookapp.Screens.PantallaFormularioUsuario
 import co.edu.cecar.smartbookapp.Screens.PantallaUsuarios
 import co.edu.cecar.smartbookapp.Screens.PantallaVentas
+import co.edu.cecar.smartbookapp.Screens.PantallaGestionIngresos // IMPORTADO: Tu nueva pantalla de ingresos
+
+import kotlinx.serialization.Serializable // Requerido para las rutas de abajo
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -146,7 +152,8 @@ fun AppNavigation() {
                                 backStack.add(LibrosRoute)
                             },
                             irAInventario = {
-                                backStack.add(InventarioRoute)
+                                // CORREGIDO: Redirige a IngresosRoute para ver la pantalla real conectada a la API
+                                backStack.add(IngresosRoute)
                             },
                             irAVentas = {
                                 backStack.add(VentasRoute)
@@ -155,6 +162,25 @@ fun AppNavigation() {
                                 backStack.add(UsuariosRoute)
                             }
                         )
+                    }
+
+                    entry<IngresosRoute> {
+                        PantallaGestionIngresos(
+                            irAFormularioIngreso = {
+                                backStack.add(NuevoIngresoRoute)
+                            },
+                            volverDashboard = {
+                                backStack.removeLastOrNull()
+                            }
+                        )
+                    }
+
+                    entry<NuevoIngresoRoute> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Button(onClick = { backStack.removeLastOrNull() }) {
+                                Text("Formulario de Ingreso - Volver")
+                            }
+                        }
                     }
 
                     entry<LotesRoute> {
@@ -326,3 +352,4 @@ fun AppNavigation() {
         }
     }
 }
+

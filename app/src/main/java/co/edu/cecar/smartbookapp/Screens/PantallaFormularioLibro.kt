@@ -120,7 +120,6 @@ fun PantallaFormularioLibro(
         CampoLibro("Lote *", "Ej: 20261", lote, { lote = it }, KeyboardType.Number)
         CampoLibro("Unidades a ingresar", "Ej: 10", stock, { stock = it }, KeyboardType.Number)
 
-        // Cambiados a KeyboardType.Decimal para permitir ingresar correctamente centavos o decimales si se requiere
         CampoLibro("Valor de compra", "$ 0.00", valorCompra, { valorCompra = it }, KeyboardType.Decimal)
         CampoLibro("Valor venta público", "$ 0.00", valorVenta, { valorVenta = it }, KeyboardType.Decimal)
 
@@ -157,7 +156,6 @@ fun PantallaFormularioLibro(
                     val compra = valorCompra.toDoubleOrNull() ?: 0.0
                     val venta = valorVenta.toDoubleOrNull() ?: 0.0
 
-                    // Se construye el objeto original. Si es una creación, el ViewModel lo traducirá al DTO limpio de forma automática.
                     val nuevoLibro = Libro(
                         id = if (esRegistro) null else idLibro,
                         nombre = nombre,

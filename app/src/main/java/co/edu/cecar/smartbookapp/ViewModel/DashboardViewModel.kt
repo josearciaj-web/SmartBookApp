@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.cecar.smartbookapp.Data.Data.Repository.DashboardRepository
-import co.edu.cecar.smartbookapp.Models.DashBoard.dashboardResponse
+import co.edu.cecar.smartbookapp.Models.Dashboard.dashboardResponse
 import kotlinx.coroutines.launch
 
 class DashboardViewModel : ViewModel() {
@@ -29,14 +29,17 @@ class DashboardViewModel : ViewModel() {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
+
             val resultado = repository.obtenerDashboard()
-            resultado.onSuccess { data ->
-                dashboardData = data
-                estaCargando = false
-            }.onFailure { error ->
-                mensajeError = error.message ?: "Error desconocido"
-                estaCargando = false
+
+            if (resultado.isSuccess) {
+                dashboardData = resultado.getOrNull()
+            } else {
+                val error = resultado.exceptionOrNull()
+                mensajeError = error?.message ?: "Error desconocido"
             }
+
+            estaCargando = false
         }
     }
 }

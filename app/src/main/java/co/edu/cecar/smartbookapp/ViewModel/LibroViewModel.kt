@@ -59,7 +59,6 @@ class LibroViewModel : ViewModel() {
                     valorCompra = libro.valorCompra,
                     valorVentaPublico = libro.valorVentaPublico
                 )
-                // Modificado: Ya recibe el Result<Unit> directo del repositorio limpio
                 repository.crearLibro(libroCrearDto)
             } else {
                 repository.actualizarLibro(libro.id, libro)
@@ -67,7 +66,7 @@ class LibroViewModel : ViewModel() {
 
             resultado.onSuccess {
                 estaCargando = false
-                cargarLibros() // Recarga la lista de libros actualizados
+                cargarLibros()
                 onSuccess()
             }.onFailure { error ->
                 mensajeError = error.message ?: "Error al guardar libro"
@@ -76,20 +75,5 @@ class LibroViewModel : ViewModel() {
         }
     }
 
-    fun eliminarLibro(id: Int) {
-        viewModelScope.launch {
-            estaCargando = true
-            mensajeError = ""
 
-            val resultado = repository.eliminarLibro(id)
-
-            resultado.onSuccess {
-                estaCargando = false
-                cargarLibros()
-            }.onFailure { error ->
-                mensajeError = error.message ?: "Error al eliminar libro"
-                estaCargando = false
-            }
-        }
-    }
 }

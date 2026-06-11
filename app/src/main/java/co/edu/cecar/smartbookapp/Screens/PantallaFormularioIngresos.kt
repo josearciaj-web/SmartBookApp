@@ -166,3 +166,33 @@ fun PantallaGestionIngresos(
             }
             Spacer(modifier = Modifier.height(80.dp))
         }
+
+        // 5. BOTÓN FLOTANTE
+        FloatingActionButton(
+            onClick = { irAFormularioIngreso() },
+            containerColor = Color(0xFFC0392B),
+            contentColor = Color.White,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp).size(60.dp)
+        ) {
+            Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar ingreso", modifier = Modifier.size(28.dp))
+        }
+    }
+}
+
+@Composable
+fun TarjetaMiniIndicador(titulo: String, valor: String, icono: ImageVector, colorIcono: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(imageVector = icono, contentDescription = null, tint = colorIcono, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = valor, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1A3A5C))
+            Text(text = titulo, fontSize = 11.sp, color = Color.Gray)
+        }
+    }
+}

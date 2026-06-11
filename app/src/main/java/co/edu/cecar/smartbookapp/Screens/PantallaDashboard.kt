@@ -1,5 +1,6 @@
 package co.edu.cecar.smartbookapp.Screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,7 +13,6 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material3.*
@@ -21,14 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.cecar.smartbookapp.R
 import co.edu.cecar.smartbookapp.Token.SessionManager
 import co.edu.cecar.smartbookapp.ViewModel.DashboardViewModel
-import java.util.Locale
 
 @Composable
 fun PantallaDashboard(
@@ -52,29 +52,39 @@ fun PantallaDashboard(
             .background(Color(0xFFF5F5F5))
             .verticalScroll(rememberScrollState())
     ) {
-        // Header
+        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "CDI CECAR",
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = Color(0xFFD32F2F)
+            Image(
+                painter = painterResource(id = R.drawable.logo_cdi),
+                contentDescription = "Logo CECAR",
+                modifier = Modifier
+                    .width(140.dp)
+                    .height(45.dp)
             )
 
             Spacer(modifier = Modifier.weight(1f))
 
             Column(horizontalAlignment = Alignment.End) {
-                Text(nombreUsuario, fontSize = 14.sp, color = Color(0xFF1E2229))
-                Text(correoUsuario, fontSize = 11.sp, color = Color.Gray)
+                Text(
+                    text = nombreUsuario,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF1E2229)
+                )
+                Text(
+                    text = correoUsuario,
+                    fontSize = 11.sp,
+                    color = Color.Gray
+                )
             }
         }
 
-        HorizontalDivider(thickness = 1.dp, color = Color.LightGray)
+        HorizontalDivider(thickness = 1.dp, color = Color(0xFFE5E7EB))
 
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -104,24 +114,31 @@ fun PantallaDashboard(
                 }
             } else {
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    TarjetaIndicador("Total Clientes", "${dashboardData?.totalClientes ?: 0}", Icons.Default.Person, Color(0xFFD32F2F), Modifier.weight(1f))
+                    TarjetaIndicador("Total Clientes", "${dashboardData?.totalClientes ?: 0}", Icons.Default.Person, Color(0xFFD32F2F), Modifier.weight(1f).clickable { irAClientes() })
                     Spacer(modifier = Modifier.width(10.dp))
-                    TarjetaIndicador("Libros Stock", "${dashboardData?.totalLibros ?: 0}", Icons.Default.MenuBook, Color(0xFF1E2229), Modifier.weight(1f))
+                    TarjetaIndicador("Libros Stock", "${dashboardData?.totalLibros ?: 0}", Icons.Default.MenuBook, Color(0xFF1E2229), Modifier.weight(1f).clickable { irALibros() })
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier.fillMaxWidth()) {
-                    TarjetaIndicador("Ventas Mes", "0", Icons.Default.ShoppingBag, Color(0xFFD32F2F), Modifier.weight(1f))
+                    TarjetaIndicador("Ver Inventario", "Stock", Icons.Default.MenuBook, Color(0xFF3F3F98), Modifier.weight(1f).clickable { irAInventario() })
                     Spacer(modifier = Modifier.width(10.dp))
                     TarjetaIndicador("Ver Lotes", "Activos", Icons.Default.Inventory, Color(0xFF1E2229), Modifier.weight(1f).clickable { irALotes() })
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                TarjetaIndicador("Ver Inventario General", "Stock", Icons.Default.MenuBook, Color(0xFF3F3F98), Modifier.fillMaxWidth().clickable { irAInventario() })
+                TarjetaIndicador(
+                    titulo = "Ventas del Mes",
+                    valor = "${dashboardData?.cantVentasMes ?: 0}",
+                    icono = Icons.Default.ShoppingBag,
+                    colorSuperior = Color(0xFFD32F2F),
+                    modifier = Modifier.fillMaxWidth().clickable { irAVentas() }
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
+
 
                 TarjetaIndicador("Gestionar Usuarios", "Accesos", Icons.Default.Person, Color(0xFF27AE60), Modifier.fillMaxWidth().clickable { irAUsuarios() })
             }
@@ -167,7 +184,7 @@ fun TarjetaIndicador(
             Text(titulo, fontSize = 14.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(4.dp))
             Text(valor, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E2229))
-            
+
             Spacer(modifier = Modifier.weight(1f))
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) {
                 Icon(icono, null, tint = colorSuperior.copy(alpha = 0.2f), modifier = Modifier.size(40.dp))

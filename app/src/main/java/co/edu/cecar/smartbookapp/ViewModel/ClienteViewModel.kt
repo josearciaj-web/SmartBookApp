@@ -33,7 +33,7 @@ class ClienteViewModel : ViewModel() {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
-            val resultado = repository.buscarPorNombre("") // Buscamos todos por defecto
+            val resultado = repository.buscarPorNombre("")
             resultado.onSuccess {
                 listaClientes = it
                 estaCargando = false
@@ -49,7 +49,6 @@ class ClienteViewModel : ViewModel() {
             estaCargando = true
             mensajeError = ""
 
-            // Corregimos el formato de fecha de DD/MM/YYYY a YYYY-MM-DD si es necesario
             val fechaCorregida = if (cliente.fechaNacimiento.contains("/")) {
                 val partes = cliente.fechaNacimiento.split("/")
                 if (partes.size == 3) {

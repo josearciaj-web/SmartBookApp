@@ -1,3 +1,10 @@
 package co.edu.cecar.smartbookapp.Models.lote
 
-data class loteResponse()
+
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class LoteResponse(
+    val codigo: Int,
+    val actual: Boolean
+)

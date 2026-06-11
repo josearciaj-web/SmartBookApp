@@ -25,13 +25,11 @@ class LoginViewModel : ViewModel() {
             estaCargando = true
             mensajeError = ""
 
-            // Los campos en LoginRequest ahora son 'email' y 'password' según el Swagger
             val credenciales = LoginRequest(email = usuario, password = contrasena)
             val resultado = repository.iniciarSesion(credenciales)
 
             resultado.onSuccess { authResponse ->
                 estaCargando = false
-                // Guardar token y datos del usuario
                 SessionManager.guardarSession(
                     token = authResponse.token,
                     nombre = authResponse.nombres,
@@ -39,7 +37,6 @@ class LoginViewModel : ViewModel() {
                     rol = authResponse.rol,
                     id = authResponse.usuarioId
                 )
-                // Ejecutar navegación
                 onSuccess()
             }.onFailure { excepcion ->
                 estaCargando = false

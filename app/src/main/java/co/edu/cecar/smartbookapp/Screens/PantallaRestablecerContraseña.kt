@@ -94,7 +94,6 @@ fun PantallaRestablecerContrasena(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Código de Verificación
                     OutlinedTextField(
                         value = codigoState,
                         onValueChange = { codigoState = it },
@@ -110,7 +109,6 @@ fun PantallaRestablecerContrasena(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Nueva Contraseña
                     OutlinedTextField(
                         value = contrasenaState,
                         onValueChange = { contrasenaState = it },
@@ -127,7 +125,6 @@ fun PantallaRestablecerContrasena(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Confirmar Contraseña
                     OutlinedTextField(
                         value = confirmarContrasenaState,
                         onValueChange = { confirmarContrasenaState = it },

@@ -55,7 +55,11 @@ fun PantallaDetalleVenta(
                         colors = CardDefaults.cardColors(containerColor = Color(0xFFC0392B))
                     ) {
                         Row(modifier = Modifier.padding(20.dp)) {
-                            Icon(Icons.Default.Receipt, contentDescription = null, tint = Color.White)
+                            Icon(
+                                Icons.Default.Receipt,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text("Detalle de Venta", color = Color.White, fontSize = 24.sp)
                         }

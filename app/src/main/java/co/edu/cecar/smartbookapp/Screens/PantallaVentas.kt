@@ -5,8 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -15,14 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import co.edu.cecar.smartbookapp.R
-
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.cecar.smartbookapp.R
 import co.edu.cecar.smartbookapp.ViewModel.VentaViewModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaVentas(
     volverDashboard: () -> Unit,
@@ -34,8 +39,26 @@ fun PantallaVentas(
     var hasta by remember { mutableStateOf("") }
     var libro by remember { mutableStateOf("Todos los libros") }
 
+    var mostrarDatePickerDesde by remember { mutableStateOf(false) }
+    var mostrarDatePickerHasta by remember { mutableStateOf(false) }
+
+    val datePickerStateDesde = rememberDatePickerState()
+    val datePickerStateHasta = rememberDatePickerState()
+
+    // CORREGIDO: Formato "yyyy-MM-dd" para que la API de ASP.NET entienda los filtros correctamente
+    val formateadorFecha = remember {
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+    }
+
     val listaVentas = viewModel.listaVentas
     val estaCargando = viewModel.estaCargando
+
+    // Disparar carga inicial por si acaso
+    LaunchedEffect(Unit) {
+        viewModel.cargarVentas()
+    }
 
     Column(
         modifier = Modifier
@@ -84,8 +107,8 @@ fun PantallaVentas(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                CampoFiltroVenta("Desde", "dd/mm/aaaa", desde) { desde = it }
-                CampoFiltroVenta("Hasta", "dd/mm/aaaa", hasta) { hasta = it }
+                CampoFiltroVenta("Desde", "aaaa-mm-dd", desde) { mostrarDatePickerDesde = true }
+                CampoFiltroVenta("Hasta", "aaaa-mm-dd", hasta) { mostrarDatePickerHasta = true }
 
                 Text("Libro", fontSize = 14.sp, color = Color(0xFF1A3A5C), modifier = Modifier.padding(top = 10.dp))
 
@@ -101,7 +124,12 @@ fun PantallaVentas(
 
                 Row {
                     Button(
-                        onClick = {},
+                        onClick = {
+                            viewModel.cargarVentas(
+                                desde = desde.ifBlank { null },
+                                hasta = hasta.ifBlank { null }
+                            )
+                        },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3F98))
                     ) {
@@ -117,6 +145,7 @@ fun PantallaVentas(
                             desde = ""
                             hasta = ""
                             libro = "Todos los libros"
+                            viewModel.cargarVentas() // Recarga completo al limpiar
                         },
                         modifier = Modifier.weight(1f)
                     ) {
@@ -163,9 +192,7 @@ fun PantallaVentas(
                         } else {
                             listaVentas.forEach { venta ->
                                 FilaVenta(
-                                    // Usamos el número de recibo real que responde tu API
                                     recibo = venta.numeroRecibo,
-                                    // Cambiamos clienteId por clienteNombre que viene en el DTO
                                     cliente = venta.clienteNombre,
                                     total = "$ ${venta.total}",
                                     fecha = venta.fecha,
@@ -179,6 +206,58 @@ fun PantallaVentas(
             }
         }
     }
+
+    if (mostrarDatePickerDesde) {
+        DatePickerDialog(
+            onDismissRequest = { mostrarDatePickerDesde = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val milisegundos = datePickerStateDesde.selectedDateMillis
+                        if (milisegundos != null) {
+                            desde = formateadorFecha.format(Date(milisegundos))
+                        }
+                        mostrarDatePickerDesde = false
+                    }
+                ) {
+                    Text("Aceptar", fontWeight = FontWeight.Bold, color = Color(0xFFC0392B))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDatePickerDesde = false }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerStateDesde)
+        }
+    }
+
+    if (mostrarDatePickerHasta) {
+        DatePickerDialog(
+            onDismissRequest = { mostrarDatePickerHasta = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val milisegundos = datePickerStateHasta.selectedDateMillis
+                        if (milisegundos != null) {
+                            hasta = formateadorFecha.format(Date(milisegundos))
+                        }
+                        mostrarDatePickerHasta = false
+                    }
+                ) {
+                    Text("Aceptar", fontWeight = FontWeight.Bold, color = Color(0xFFC0392B))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDatePickerHasta = false }) {
+                    Text("Cancelar", color = Color.Gray)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerStateHasta)
+        }
+    }
 }
 
 @Composable
@@ -186,18 +265,24 @@ fun CampoFiltroVenta(
     label: String,
     placeholder: String,
     valor: String,
-    onChange: (String) -> Unit
+    onClick: () -> Unit
 ) {
     Text(label, fontSize = 14.sp, color = Color(0xFF1A3A5C), modifier = Modifier.padding(top = 10.dp))
 
     OutlinedTextField(
         value = valor,
-        onValueChange = onChange,
+        onValueChange = { },
+        readOnly = true,
         placeholder = { Text(placeholder) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         singleLine = true,
-        trailingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        trailingIcon = {
+            IconButton(onClick = { onClick() }) {
+                Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = Color(0xFF1A3A5C))
+            }
+        }
     )
 }
 

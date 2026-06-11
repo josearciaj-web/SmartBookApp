@@ -56,3 +56,8 @@ data class EditarUsuarioRoute(val id: Int) : NavKey
 
 @Serializable
 data class DetalleVentaRoute(val id: Int) : NavKey
+@Serializable
+object IngresosRoute: NavKey
+
+@Serializable
+object NuevoIngresoRoute:NavKey

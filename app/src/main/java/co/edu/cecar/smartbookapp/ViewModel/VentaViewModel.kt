@@ -13,7 +13,6 @@ import kotlinx.coroutines.launch
 class VentaViewModel : ViewModel() {
     private val repository = VentaRepository()
 
-    // Ahora la lista maneja la respuesta real del servidor (VentaResponse)
     var listaVentas by mutableStateOf<List<VentaResponse>>(emptyList())
         private set
 
@@ -30,18 +29,20 @@ class VentaViewModel : ViewModel() {
         cargarVentas()
     }
 
-    fun cargarVentas() {
+    fun cargarVentas(desde: String? = null, hasta: String? = null) {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
-            val resultado = repository.obtenerHistorial()
-            resultado.onSuccess { ventas ->
-                listaVentas = ventas
-                estaCargando = false
-            }.onFailure { error ->
-                mensajeError = error.message ?: "Error al cargar el historial de ventas"
-                estaCargando = false
+
+            val resultado = repository.obtenerHistorial(desde, hasta)
+
+            if (resultado.isSuccess) {
+                listaVentas = resultado.getOrNull() ?: emptyList()
+            } else {
+                val error = resultado.exceptionOrNull()
+                mensajeError = error?.message ?: "Error al cargar el historial de ventas"
             }
+            estaCargando = false
         }
     }
 
@@ -49,14 +50,16 @@ class VentaViewModel : ViewModel() {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
+
             val resultado = repository.buscarVentaPorId(id)
-            resultado.onSuccess { venta ->
-                ventaSeleccionada = venta
-                estaCargando = false
-            }.onFailure { error ->
-                mensajeError = error.message ?: "Error al buscar la venta"
-                estaCargando = false
+
+            if (resultado.isSuccess) {
+                ventaSeleccionada = resultado.getOrNull()
+            } else {
+                val error = resultado.exceptionOrNull()
+                mensajeError = error?.message ?: "Error al buscar la venta"
             }
+            estaCargando = false
         }
     }
 
@@ -64,15 +67,17 @@ class VentaViewModel : ViewModel() {
         viewModelScope.launch {
             estaCargando = true
             mensajeError = ""
+
             val resultado = repository.registrarNuevaVenta(ventaRequest)
-            resultado.onSuccess {
-                estaCargando = false
-                cargarVentas() // Recarga el historial con la nueva venta incluida
+
+            if (resultado.isSuccess) {
+                cargarVentas()
                 onSuccess()
-            }.onFailure { error ->
-                mensajeError = error.message ?: "Error al procesar la venta"
-                estaCargando = false
+            } else {
+                val error = resultado.exceptionOrNull()
+                mensajeError = error?.message ?: "Error al procesar la venta"
             }
+            estaCargando = false
         }
     }
 }

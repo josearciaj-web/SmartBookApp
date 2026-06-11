@@ -5,42 +5,42 @@ import co.edu.cecar.smartbookapp.Models.Venta.CrearVentaRequest
 import co.edu.cecar.smartbookapp.Models.Venta.VentaResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
 
 class VentaRepository {
-
     private val client = HttpClientProvider.client
-    // URL exacta según el servidor para el módulo de Ventas
     private val BASE_URL_API = "https://api.smartbooks.cecar.cloud/api/Ventas"
+    private val jsonDecoder = Json { ignoreUnknownKeys = true }
 
-    // 1. Registrar una nueva venta (POST) utilizando el DTO de creación
-    suspend fun registrarNuevaVenta(ventaRequest: CrearVentaRequest): Result<VentaResponse> = runCatching {
+    suspend fun registrarNuevaVenta(venta: CrearVentaRequest): Result<Unit> = runCatching {
         val respuesta = client.post(BASE_URL_API) {
-            setBody(ventaRequest)
+            setBody(venta)
         }
-        if (!respuesta.status.isSuccess()) {
-            throw Exception("Error al registrar venta: ${respuesta.status.value}")
-        }
-        respuesta.body<VentaResponse>()
+        check(respuesta.status.isSuccess()) { "Error al registrar la venta: ${respuesta.status.value}" }
     }
 
-    // 2. Obtener el historial completo de ventas (GET)
-    suspend fun obtenerHistorial(): Result<List<VentaResponse>> = runCatching {
-        val respuesta = client.get(BASE_URL_API)
-        if (!respuesta.status.isSuccess()) {
-            throw Exception("Error al obtener el historial: ${respuesta.status.value}")
+    suspend fun obtenerHistorial(desde: String? = null, hasta: String? = null): Result<List<VentaResponse>> = runCatching {
+        val respuesta = client.get(BASE_URL_API) {
+            if (!desde.isNullOrBlank( )) parameter("desde", desde)
+            if (!hasta.isNullOrBlank()) parameter("hasta", hasta)
         }
-        respuesta.body<List<VentaResponse>>()
+        check(respuesta.status.isSuccess()) { "Error al obtener historial: ${respuesta.status.value}" }
+
+        val jsonTexto = respuesta.bodyAsText()
+        jsonDecoder.decodeFromString(ListSerializer(VentaResponse.serializer()), jsonTexto)
     }
 
-    // 3. Buscar una venta específica por su ID único (GET /api/Ventas/{id})
     suspend fun buscarVentaPorId(id: Int): Result<VentaResponse> = runCatching {
-        val respuesta = client.get("${BASE_URL_API}/$id")
-        if (!respuesta.status.isSuccess()) {
-            throw Exception("Venta con ID $id no encontrada")
-        }
-        respuesta.body<VentaResponse>()
+        val respuesta = client.get("$BASE_URL_API/$id")
+        check(respuesta.status.isSuccess()) { "Error al buscar la venta: ${respuesta.status.value}" }
+
+        val jsonTexto = respuesta.bodyAsText()
+        jsonDecoder.decodeFromString(VentaResponse.serializer(), jsonTexto)
     }
 }

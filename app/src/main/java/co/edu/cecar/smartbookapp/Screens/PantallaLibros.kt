@@ -1,30 +1,29 @@
 package co.edu.cecar.smartbookapp.Screens
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import co.edu.cecar.smartbookapp.Models.Libros.Libro
-import co.edu.cecar.smartbookapp.R
 import co.edu.cecar.smartbookapp.ViewModel.LibroViewModel
+import java.text.NumberFormat
+import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PantallaLibros(
     volverDashboard: () -> Unit,
@@ -32,14 +31,9 @@ fun PantallaLibros(
     irEditarLibro: (Int) -> Unit,
     viewModel: LibroViewModel = viewModel()
 ) {
-    var buscarState by remember { mutableStateOf("") }
+    var buscarTexto by remember { mutableStateOf("") }
 
-    val libros = viewModel.listaLibros.filter {
-        it.nombre.contains(buscarState, ignoreCase = true) ||
-                it.nivel.contains(buscarState, ignoreCase = true) ||
-                it.tipo.toString().contains(buscarState, ignoreCase = true)
-    }
-
+    val listaLibros = viewModel.listaLibros
     val estaCargando = viewModel.estaCargando
     val mensajeError = viewModel.mensajeError
 
@@ -50,221 +44,121 @@ fun PantallaLibros(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFF9FAFB))
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+        IconButton(onClick = { volverDashboard() }) {
+            Icon(Icons.Default.ArrowBack, contentDescription = "Volver al Dashboard")
+        }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { volverDashboard() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color(0xFF1A3A5C))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFC0392B)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text("Gestión de Libros", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Inventario de textos académicos del Centro de Idiomas", color = Color.White, fontSize = 13.sp)
             }
-
-            Image(
-                painter = painterResource(id = R.drawable.logo_cdi),
-                contentDescription = "Logo CDI",
-                modifier = Modifier
-                    .width(145.dp)
-                    .height(55.dp)
-            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("Gestión de Libros", fontSize = 30.sp, color = Color(0xFF1A3A5C))
-        Text("Administra los libros del sistema SmartBook", fontSize = 14.sp, color = Color.Gray)
-
-        Spacer(modifier = Modifier.height(18.dp))
-
         Button(
             onClick = { irNuevoLibro() },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC0392B))
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC0392B)),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Nuevo Libro")
+            Text("+ Nuevo Libro", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedButton(
-            onClick = { viewModel.cargarLibros() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Refresh, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Actualizar lista")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         OutlinedTextField(
-            value = buscarState,
-            onValueChange = { buscarState = it },
-            placeholder = { Text("Buscar por nombre, nivel o tipo...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+            value = buscarTexto,
+            onValueChange = { buscarTexto = it },
+            placeholder = { Text("Buscar libro por nombre o nivel...") },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFFD32F2F))
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Column {
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.MenuBook, contentDescription = null, tint = Color(0xFF3F3F98))
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MenuBook, null, tint = Color(0xFF0B3A5B))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Listado de Libros", color = Color(0xFF1A3A5C), fontSize = 20.sp)
+                    Text("Catálogo de Textos", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0B3A5B))
                 }
 
-                if (mensajeError.isNotBlank()) {
-                    Text(
-                        text = mensajeError,
-                        color = Color(0xFFC0392B),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = Color.LightGray)
 
-                Row(
-                    modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(14.dp)
-                ) {
-                    Column {
-                        FilaEncabezadoLibros()
-                        HorizontalDivider()
+                if (estaCargando) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(30.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFFC0392B))
+                    }
+                } else if (mensajeError.isNotEmpty()) {
+                    Text(mensajeError, color = Color.Red, modifier = Modifier.padding(vertical = 8.dp))
+                } else {
+                    val librosFiltrados = listaLibros.filter {
+                        it.nombre.contains(buscarTexto, ignoreCase = true) || it.nivel.contains(buscarTexto, ignoreCase = true)
+                    }
 
-                        when {
-                            estaCargando -> {
-                                Box(
-                                    modifier = Modifier
-                                        .width(930.dp)
-                                        .padding(20.dp),
-                                    contentAlignment = Alignment.Center
+                    if (librosFiltrados.isEmpty()) {
+                        Text(
+                            text = "No se encontraron libros que coincidan.",
+                            color = Color.Gray,
+                            fontSize = 14.sp,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+
+                    librosFiltrados.forEach { libro ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { irEditarLibro(libro.id ?: 0) }
+                                .padding(vertical = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = libro.nombre, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E2229))
+                                Text(text = "Nivel: ${libro.nivel} | Lote: ${libro.lote}", fontSize = 13.sp, color = Color.Gray)
+                            }
+
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Stock", fontSize = 11.sp, color = Color.Gray)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Card(
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+                                    shape = RoundedCornerShape(6.dp)
                                 ) {
-                                    CircularProgressIndicator()
-                                }
-                            }
-
-                            libros.isEmpty() -> {
-                                Text(
-                                    text = "No se encontraron libros",
-                                    modifier = Modifier.padding(20.dp),
-                                    color = Color.Gray
-                                )
-                            }
-
-                            else -> {
-                                libros.forEach { libro ->
-                                    FilaLibro(
-                                        id = libro.id ?: 0,
-                                        nombre = libro.nombre,
-                                        nivel = libro.nivel,
-                                        tipo = obtenerTipoLibro(libro.tipo.toString()),
-                                        edicion = libro.edicion,
-                                        lote = libro.lote,
-                                        stock = obtenerStockLibro(libro),
-                                        irEditarLibro = irEditarLibro,
-                                        onEliminar = {
-                                            if ((libro.id ?: 0) != 0) {
-                                                viewModel.eliminarLibro(libro.id ?: 0)
-                                            }
-                                        }
+                                    Text(
+                                        text = "${libro.stock}",
+                                        color = Color(0xFF1A3A5C),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                     )
-                                    HorizontalDivider()
                                 }
                             }
                         }
+                        HorizontalDivider(color = Color(0xFFF2F4F4))
                     }
                 }
             }
-        }
-    }
-}
-
-fun obtenerTipoLibro(tipo: String): String {
-    return when (tipo) {
-        "1" -> "Student's Book"
-        "2" -> "Workbook"
-        else -> tipo
-    }
-}
-
-fun obtenerStockLibro(libro: Libro): Int {
-    val stockInventario = libro.inventario?.sumOf { item -> item.unidades } ?: 0
-    return when {
-        libro.stock > 0 -> libro.stock
-        libro.unidades > 0 -> libro.unidades
-        stockInventario > 0 -> stockInventario
-        else -> 0
-    }
-}
-
-@Composable
-fun FilaEncabezadoLibros() {
-    Row(modifier = Modifier.width(930.dp)) {
-        Text("Nombre", modifier = Modifier.width(210.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Nivel", modifier = Modifier.width(140.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Tipo", modifier = Modifier.width(150.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Edición", modifier = Modifier.width(100.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Lote", modifier = Modifier.width(100.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Stock", modifier = Modifier.width(90.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-        Text("Acciones", modifier = Modifier.width(140.dp), color = Color(0xFF1A3A5C), fontSize = 15.sp)
-    }
-}
-
-@Composable
-fun FilaLibro(
-    id: Int,
-    nombre: String,
-    nivel: String,
-    tipo: String,
-    edicion: String,
-    lote: Int,
-    stock: Int,
-    irEditarLibro: (Int) -> Unit,
-    onEliminar: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .width(930.dp)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(nombre, modifier = Modifier.width(210.dp), fontSize = 14.sp)
-        Text(nivel, modifier = Modifier.width(140.dp), fontSize = 14.sp)
-        Text(tipo, modifier = Modifier.width(150.dp), fontSize = 14.sp)
-        Text(edicion, modifier = Modifier.width(100.dp), fontSize = 14.sp)
-        Text(text = lote.toString(), modifier = Modifier.width(100.dp), fontSize = 14.sp)
-        Text(text = stock.toString(), modifier = Modifier.width(90.dp), fontSize = 14.sp)
-
-        Row(modifier = Modifier.width(140.dp)) {
-            Text(
-                "Editar",
-                modifier = Modifier.clickable { irEditarLibro(id) },
-                color = Color(0xFFC0392B),
-                fontSize = 14.sp
-            )
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            Text(
-                "Borrar",
-                modifier = Modifier.clickable { onEliminar() },
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
         }
     }
 }

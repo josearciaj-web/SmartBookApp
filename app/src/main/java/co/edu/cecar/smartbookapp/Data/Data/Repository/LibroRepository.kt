@@ -35,7 +35,6 @@ class LibroRepository {
         respuesta.body<Libro>()
     }
 
-    // Cambiamos el retorno a Result<Unit> para no obligar a Ktor a parsear la respuesta del servidor
     suspend fun crearLibro(libro: CrearLibro): Result<Unit> = runCatching {
         val respuesta = client.post(BASE_URL_API) {
             setBody(libro)

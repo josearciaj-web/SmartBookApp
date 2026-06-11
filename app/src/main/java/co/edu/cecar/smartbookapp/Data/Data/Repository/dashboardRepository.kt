@@ -1,7 +1,7 @@
 package co.edu.cecar.smartbookapp.Data.Data.Repository
 
 import co.edu.cecar.smartbookapp.HttpClientProvider
-import co.edu.cecar.smartbookapp.Models.DashBoard.dashboardResponse
+import co.edu.cecar.smartbookapp.Models.Dashboard.dashboardResponse
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.http.isSuccess
